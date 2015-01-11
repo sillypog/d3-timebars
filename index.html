@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<script src="bower_components/d3/d3.js"></script>
+		<script src="bower_components/jquery/dist/jquery.min.js"></script>
+		<script src="bower_components/underscore/underscore.js"></script>
+		<script>
+			var ticket = {"id":16701,"stateChanges":[{"state":"inactive","hours":43,"mins":37},{"state":"active","hours":1,"mins":40},{"state":"pending-review","hours":23,"mins":59}],"current":"pending-review","closed":false};
+
+			var tickets = [{"id":16701,"stateChanges":[{"state":"inactive","hours":43,"mins":37},{"state":"active","hours":1,"mins":40},{"state":"pending-review","hours":23,"mins":59}],"current":"pending-review","closed":false},{"id":16700,"stateChanges":[{"state":"inactive","hours":69,"mins":19}],"current":"inactive","closed":false},{"id":16705,"stateChanges":[{"state":"inactive","hours":53,"mins":31}],"current":"inactive","closed":false},{"id":16631,"stateChanges":[{"state":"inactive","hours":0,"mins":22},{"state":"active","hours":96,"mins":"06"},{"state":"pending-review","hours":100,"mins":"04"}],"current":"pending-review","closed":false},{"id":16703,"stateChanges":[{"state":"inactive","hours":0,"mins":"03"},{"state":"active","hours":0,"mins":33},{"state":"pending-review","hours":2,"mins":27},{"state":"pending-approval","hours":66,"mins":"02"}],"current":"pending-approval","closed":false},{"id":14778,"stateChanges":[{"state":"inactive","hours":3864,"mins":43},{"state":"active","hours":20,"mins":"05"},{"state":"inactive","hours":75,"mins":12}],"current":"inactive","closed":false},{"id":16584,"stateChanges":[{"state":"inactive","hours":165,"mins":45}],"current":"invalid","closed":true},{"id":16388,"stateChanges":[{"state":"inactive","hours":263,"mins":55},{"state":"active","hours":342,"mins":40},{"state":"pending-review","hours":115,"mins":52}],"current":"pending-review","closed":false},{"id":16627,"stateChanges":[{"state":"inactive","hours":198,"mins":24}],"current":"inactive","closed":false},{"id":16528,"stateChanges":[{"state":"inactive","hours":22,"mins":55},{"state":"active","hours":388,"mins":17}],"current":"active","closed":false},{"id":16440,"stateChanges":[{"state":"inactive","hours":0,"mins":"01"},{"state":"active","hours":0,"mins":"01"},{"state":"pending-review","hours":22,"mins":21},{"state":"pending-qa","hours":23,"mins":"00"},{"state":"pending-approval","hours":20,"mins":39}],"current":"deployed","closed":true},{"id":12408,"stateChanges":[{"state":"new","hours":48,"mins":34},{"state":"active","hours":504,"mins":51},{"state":"pending-review","hours":117,"mins":59},{"state":"pending-qa","hours":5740,"mins":49},{"state":"inactive","hours":2110,"mins":10}],"current":"inactive","closed":false},{"id":16078,"stateChanges":[{"state":"inactive","hours":24,"mins":33},{"state":"active","hours":0,"mins":26},{"state":"inactive","hours":647,"mins":28},{"state":"active","hours":0,"mins":17}],"current":"invalid","closed":true}];
+		</script>
+		<style>
+			h2 { display: inline-block; }
+			ol {
+			    counter-reset: item;
+			    list-style-type: none;
+			    display: inline-block;
+			}
+			li {
+				display: inline-block;
+				line-height: 40px;
+				text-align: center;
+			}
+			.state-inactive { background-color: #8525ff; }
+			.state-active { background-color: #b571ff; }
+			.state-pending-review { background-color: #d2aeff; }
+			.state-pending-qa { background-color: #cc30ff;}
+			.state-pending-approval { background-color: #f8bafd;}
+		</style>
+	</head>
+	<body>
+		<h1>timebars</h1>
+		<div id="data-display">
+			<div class="ticket-data">
+				<h2>Ticket ID</h2>
+				<ol></ol>
+			</div>
+		</div>
+
+		<script>
+			function drawTicket(){
+				var list = $('.ticket-data')
+					.find('h2').text(ticket.id).end()
+					.find('ol');
+
+				var totalTime = _.reduce(ticket.stateChanges, function(memo, state){ return memo + (state.hours*60) + state.mins
+				}, 0);
+
+				console.log('totalTime'+totalTime);
+
+				var chartWidth = 600;
+				var pixelsPerMin = chartWidth/totalTime;
+
+				$.each(ticket.stateChanges, function(i,stateChange){
+					var stateMins = (stateChange.hours * 60) + stateChange.mins;
+					var stateWidth = stateMins * pixelsPerMin;
+					var stateElement = '<li class="state-'+stateChange.state+'" style="width:'+stateWidth+'px;">'+stateChange.hours+':'+stateChange.mins+'</li>';
+
+					list.append(stateElement);
+				});
+			}
+
+			function drawTickets(){
+				var denormalisedChartWidth = 600;
+				var chartWidth = denormalisedChartWidth / 2;
+
+
+				// Get all the total times
+				var totalTimes = _.map(tickets, function(ticket){
+					return _.reduce(ticket.stateChanges, function(memo, state){
+						return memo + (state.hours*60) + parseInt(state.mins);
+					}, 0);
+				});
+				console.log(totalTimes)
+				// Work out the longest total time
+				var longestTime = _.max(totalTimes);
+				// Set pixels per min for the longest
+				var pixelsPerMin = chartWidth/longestTime;
+
+				var dataDisplay = $('#data-display').empty();
+
+				$.each(tickets, function(i, ticket){
+					var ticketDisplay = $('<div class=".ticket-display"><h2>'+ticket.id+'</h2></div>');
+					var denormalisedList = $('<ol class="denormalised-list"></ol>').appendTo(ticketDisplay);
+					var list = $('<ol></ol>').appendTo(ticketDisplay);
+
+					var denormalisedPixelsPerMin = denormalisedChartWidth/totalTimes[i];
+
+					$.each(ticket.stateChanges, function(i, stateChange){
+						var stateMins = (stateChange.hours * 60) + parseInt(stateChange.mins);
+						var stateWidth = stateMins * pixelsPerMin;
+						var stateElement = '<li class="state-'+stateChange.state+'" style="width:'+stateWidth+'px;">&nbsp;</li>';
+
+						var denomalisedWidth = stateMins * denormalisedPixelsPerMin;
+						var denormalisedElement = '<li class="state-'+stateChange.state+'" style="width:'+denomalisedWidth+'px;">'+stateChange.hours+':'+stateChange.mins+'</li>';
+
+						denormalisedList.append(denormalisedElement);
+						list.append(stateElement);
+					});
+
+					dataDisplay.append(ticketDisplay);
+				})
+			}
+
+			$(function(){
+				drawTickets();
+			});
+		</script>
+	</body>
+</html>

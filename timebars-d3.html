@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<script src="bower_components/d3/d3.js"></script>
+		<script src="bower_components/jquery/dist/jquery.min.js"></script>
+		<script src="bower_components/underscore/underscore.js"></script>
+		<script>
+			var ticket16701 = {"id":16701,"stateChanges":[{"state":"inactive","hours":43,"mins":37},{"state":"active","hours":1,"mins":40},{"state":"pending-review","hours":23,"mins":59}],"current":"pending-review","closed":false};
+
+			var tickets = [{"id":16701,"stateChanges":[{"state":"inactive","time":2617},{"state":"active","time":100},{"state":"pending-review","time":3423}],"current":"pending-review","closed":false,"total":6140},{"id":16700,"stateChanges":[{"state":"inactive","time":6143}],"current":"inactive","closed":false,"total":6143},{"id":16705,"stateChanges":[{"state":"inactive","time":5195}],"current":"inactive","closed":false,"total":5195},{"id":16631,"stateChanges":[{"state":"inactive","time":23},{"state":"active","time":5766},{"state":"pending-review","time":7987}],"current":"pending-review","closed":false,"total":13776},{"id":16703,"stateChanges":[{"state":"inactive","time":4},{"state":"active","time":33},{"state":"pending-review","time":148},{"state":"pending-approval","time":5946}],"current":"pending-approval","closed":false,"total":6131},{"id":14778,"stateChanges":[{"state":"inactive","time":231884},{"state":"active","time":1205},{"state":"inactive","time":6496}],"current":"inactive","closed":false,"total":239585},{"id":16584,"stateChanges":[{"state":"inactive","time":9946}],"current":"invalid","closed":true,"total":9946},{"id":16388,"stateChanges":[{"state":"inactive","time":15835},{"state":"active","time":20561},{"state":"pending-review","time":8936}],"current":"pending-review","closed":false,"total":45332},{"id":16627,"stateChanges":[{"state":"inactive","time":13888}],"current":"inactive","closed":false,"total":13888},{"id":16528,"stateChanges":[{"state":"inactive","time":1376},{"state":"active","time":25280}],"current":"active","closed":false,"total":26656},{"id":16440,"stateChanges":[{"state":"inactive","time":1},{"state":"active","time":2},{"state":"pending-review","time":1341},{"state":"pending-qa","time":1381},{"state":"pending-approval","time":1240}],"current":"deployed","closed":true,"total":3965},{"id":12408,"stateChanges":[{"state":"new","time":2915},{"state":"active","time":30291},{"state":"pending-review","time":7079},{"state":"pending-qa","time":344450},{"state":"inactive","time":128594}],"current":"inactive","closed":false,"total":513329},{"id":16078,"stateChanges":[{"state":"inactive","time":1473},{"state":"active","time":27},{"state":"inactive","time":38848},{"state":"active","time":18}],"current":"invalid","closed":true,"total":40366}];
+		</script>
+		<style>
+			h2 { display: inline-block; }
+			ol {
+			    counter-reset: item;
+			    list-style-type: none;
+			    display: inline-block;
+			}
+			li {
+				display: inline-block;
+				line-height: 40px;
+				text-align: center;
+				min-height: 10px;
+			}
+			.state-inactive { background-color: #8525ff; }
+			.state-active { background-color: #b571ff; }
+			.state-pending-review { background-color: #d2aeff; }
+			.state-pending-qa { background-color: #cc30ff;}
+			.state-pending-approval { background-color: #f8bafd;}
+		</style>
+	</head>
+	<body>
+		<h1>timebars</h1>
+		<div id="data-display"></div>
+
+		<script>
+			function generateLinearScale(data, domainFunction, width){
+				return d3.scale.linear()
+					.domain([0, domainFunction(data)])
+					.range([0, width]);
+			}
+
+			function createDataGroupElement(elementId){
+				$('#data-display').append('<div id="ticket-'+elementId+'" class="ticket-data"><h2></h2><ol class="denormalised-list"></ol><ol class="normalised-list"></ol></div>');
+				return $('#ticket-'+elementId)
+			}
+
+			function drawData(selector, data, scaler){
+				return d3.select(selector)
+					.selectAll('li')
+					.data(data)
+					.enter() // whenever there is a data element with no on screen representation yet, do...
+					.append('li')
+					.style('width', function(stateChange){
+						return scaler(stateChange.time) + 'px';
+					})
+					.attr('class', function(stateChange){
+						return 'state-'+stateChange.state;
+					});
+			}
+
+			function convertMinutesToHours(minutes){
+				var hours = Math.floor(minutes/60);
+
+				var exactHours = hours * 60;
+				var remainingMinutes = Math.floor(minutes - exactHours);
+
+				return hours+':'+ (remainingMinutes < 10 ? '0'+remainingMinutes : remainingMinutes);
+			}
+
+			function drawTicket(ticket){
+				var dataGroup = createDataGroupElement(ticket.id)
+
+				var list = dataGroup.find('h2').text(ticket.id)
+
+				var linearScale = generateLinearScale(ticket.total, function(d){return d;}, 600);
+
+				drawData('#ticket-'+ticket.id+' ol.denormalised-list', ticket.stateChanges, linearScale)
+					.text(function(stateChange){
+						return convertMinutesToHours(stateChange.time);	// d3 time format?
+					});
+			}
+
+			function drawTickets(){
+				var minuteTotals = _.pluck(tickets, 'total');
+				var globalScale = generateLinearScale(minuteTotals, d3.max, 300);
+
+				_.each(tickets, function(ticket){
+					drawTicket(ticket);
+					drawData('#ticket-'+ticket.id+' ol.normalised-list', ticket.stateChanges, globalScale)
+						.text(function(stateChange){
+							return '\u00a0';
+						});
+				});
+			}
+
+
+			$(function(){
+				//drawTicket(ticket16701);
+				drawTickets();
+			});
+		</script>
+	</body>
+</html>

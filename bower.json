@@ -1,0 +1,21 @@
+{
+  "name": "timebars",
+  "version": "0.0.0",
+  "authors": [
+    "Peter Hastie <phastie@bleacherreport.com>"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "d3": "~3.4.11",
+    "jquery": "~2.1.1",
+    "underscore": "~1.6.0"
+  }
+}
